@@ -57,6 +57,8 @@ function customHttp() {
 }
 
 function loadNews() {
+  renderPreloader();
+
   if (!search.value) {
     const categoryValue = category.value;
     const countryValue = country.value;
@@ -103,6 +105,8 @@ function newsTemplate({ urlToImage, title, description, url }) {
 
 // Function on get response from server
 function onGetResponse(error, response) {
+  removePreloader();
+
   if (error) {
     M.toast({ html: error });
     return;
@@ -150,6 +154,24 @@ function renderNewsList(newsContainer, news) {
 
   newsContainer.insertAdjacentHTML("afterbegin", fragment);
 }
+
+function renderPreloader() {
+  const body = document.body;
+
+  htmlText = `
+  <div class="progress">
+    <div class="indeterminate"></div>
+  </div>`;
+
+  body.insertAdjacentHTML("afterbegin", htmlText);
+}
+
+function removePreloader() {
+  const preloader = document.querySelector(".progress");
+
+  if (preloader) preloader.remove();
+}
+
 //! Constants
 
 // Form
