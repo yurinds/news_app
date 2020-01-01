@@ -57,22 +57,29 @@ function customHttp() {
 }
 
 function loadNews() {
-  newsServise.topHeadlines("ru", onGetResponse);
+  if (!search.value) {
+    const categoryValue = category.value;
+    const countryValue = country.value;
+
+    newsServise.topHeadlines(countryValue, categoryValue, onGetResponse);
+  } else {
+    const searchValue = search.value;
+    newsServise.everything(searchValue, onGetResponse);
+  }
 }
 
 function renderNews(news) {
   const newsContainer = document.querySelector(".news-container .row");
 
-  let fragment = "";
-  news.forEach(newsItem => {
-    const el = newsTemplate(newsItem);
+  clearNewsContainer(newsContainer);
+  removeEmptyNewsListCard();
 
-    fragment += el;
-  });
+  if (!news.length) {
+    renderEmptyNewsList();
+    return;
+  }
 
-  console.log(fragment);
-
-  newsContainer.insertAdjacentHTML("afterbegin", fragment);
+  renderNewsList(newsContainer, news);
 }
 
 function newsTemplate({ urlToImage, title, description, url }) {
@@ -96,10 +103,61 @@ function newsTemplate({ urlToImage, title, description, url }) {
 
 // Function on get response from server
 function onGetResponse(error, response) {
+  if (error) {
+    M.toast({ html: error });
+    return;
+  }
+
   renderNews(response.articles);
 }
 
+function clearNewsContainer(newsContainer) {
+  while (newsContainer.lastElementChild) {
+    newsContainer.removeChild(newsContainer.lastElementChild);
+  }
+}
+
+function renderEmptyNewsList(newsContainer) {
+  const container = document.querySelector(".news-container .container");
+
+  htmlText = `
+    <div class="col s12 empty-news-list">
+      <div class="card-panel teal">
+        <span class="white-text">
+          News list is empty!
+        </span>
+      </div>
+    </div>`;
+
+  container.insertAdjacentHTML("afterbegin", htmlText);
+}
+
+function removeEmptyNewsListCard() {
+  const card = document.querySelector(
+    ".news-container .container .empty-news-list"
+  );
+
+  if (card) card.remove();
+}
+
+function renderNewsList(newsContainer, news) {
+  let fragment = "";
+  news.forEach(newsItem => {
+    const el = newsTemplate(newsItem);
+
+    fragment += el;
+  });
+
+  newsContainer.insertAdjacentHTML("afterbegin", fragment);
+}
 //! Constants
+
+// Form
+const searchForm = document.forms.newsControls;
+const category = searchForm.category;
+const country = searchForm.country;
+const search = searchForm.search;
+const submit = searchForm.action;
 
 // Init http module
 const http = customHttp();
@@ -109,9 +167,9 @@ const newsServise = (function() {
   const apiUrl = "https://newsapi.org/v2";
 
   return {
-    topHeadlines(country = "ru", cb) {
+    topHeadlines(country = "ru", category = "business", cb) {
       http.get(
-        `${apiUrl}/top-headlines?country=${country}&apiKey=${apiKey}`,
+        `${apiUrl}/top-headlines?country=${country}&category=${category}&apiKey=${apiKey}`,
         cb
       );
     },
@@ -125,5 +183,11 @@ const newsServise = (function() {
 
 document.addEventListener("DOMContentLoaded", function() {
   M.AutoInit();
+  loadNews();
+});
+
+submit.addEventListener("click", function(event) {
+  event.preventDefault();
+
   loadNews();
 });
