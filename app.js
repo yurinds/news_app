@@ -1,3 +1,5 @@
+//! Functions
+
 // Custom Http Module
 function customHttp() {
   return {
@@ -53,10 +55,75 @@ function customHttp() {
     }
   };
 }
+
+function loadNews() {
+  newsServise.topHeadlines("ru", onGetResponse);
+}
+
+function renderNews(news) {
+  const newsContainer = document.querySelector(".news-container .row");
+
+  let fragment = "";
+  news.forEach(newsItem => {
+    const el = newsTemplate(newsItem);
+
+    fragment += el;
+  });
+
+  console.log(fragment);
+
+  newsContainer.insertAdjacentHTML("afterbegin", fragment);
+}
+
+function newsTemplate({ urlToImage, title, description, url }) {
+  return `
+  <div class="col s12">
+    <div class="card">
+      <div class="card-image">
+        <img src="${urlToImage || ""}">
+        <span class="card-title">${title || ""}</span>
+      </div>
+      <div class="card-content">
+        <p>${description || ""}</p>
+      </div>
+      <div class="card-action">
+        <a href="${url || ""}">Read more</a>
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+// Function on get response from server
+function onGetResponse(error, response) {
+  renderNews(response.articles);
+}
+
+//! Constants
+
 // Init http module
 const http = customHttp();
 
-//  init selects
+const newsServise = (function() {
+  const apiKey = "589141923b674581b6c1fa0746059635";
+  const apiUrl = "https://newsapi.org/v2";
+
+  return {
+    topHeadlines(country = "ru", cb) {
+      http.get(
+        `${apiUrl}/top-headlines?country=${country}&apiKey=${apiKey}`,
+        cb
+      );
+    },
+    everything(query, cb) {
+      http.get(`${apiUrl}/everything?q=${query}&apiKey=${apiKey}`, cb);
+    }
+  };
+})();
+
+//! Event listeners
+
 document.addEventListener("DOMContentLoaded", function() {
   M.AutoInit();
+  loadNews();
 });
